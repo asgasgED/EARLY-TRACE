@@ -55,3 +55,8 @@ artifacts/results/**
 
 artifacts/logs/**
 !artifacts/logs/.gitkeep
+
+# Python generated metadata
+*.egg-info/
+build/
+dist/
