@@ -1,0 +1,136 @@
+{
+  "fixture": {
+    "id": "ledger_basic",
+    "synthetic": true,
+    "reference_cutoff": "2026-03-01T10:05:00+00:00",
+    "notice": "SYNTHETIC FIXTURE: fabricated data for EARLY-TRACE G2 tests. Not real Ethereum data."
+  },
+  "events": [
+    {
+      "event_id": "evt-001",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_transaction",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:01:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0x353b606f2b6e06cc6825c166866784be978ef805bfdde058fd70198015be873a",
+      "fields": {
+        "transfer_count": {
+          "state": "observed",
+          "value": 3
+        }
+      }
+    },
+    {
+      "event_id": "evt-002-late",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:08:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0xd34b10950b2e41fd2f811a8408575fd5bcb0b96551159b83d675fd9375262d41",
+      "log_index": 0,
+      "fields": {
+        "transfer_count": {
+          "state": "observed",
+          "value": 7
+        }
+      }
+    },
+    {
+      "event_id": "evt-003-boundary",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_block",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:04:00+00:00",
+      "received_at": "2026-03-01T10:05:00+00:00",
+      "block_number": 101,
+      "block_hash": "0xc355cc002e7321194a1cc72124a294e9d29d7ac5894efa19122bfc1734a8d2f5"
+    },
+    {
+      "event_id": "evt-004-offset",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T15:00:00+05:00",
+      "received_at": "2026-03-01T15:03:00+05:00",
+      "block_number": 102,
+      "block_hash": "0x72f27f17c6ab92a4b8452863d1c5c492f4da612ee66053063e47fe81fe5065a2",
+      "tx_hash": "0xb38d02bacdc6872cb13fb2d0a223ca1bd1058fa1a6a5e17e011b6a0d411ff557",
+      "log_index": 1,
+      "fields": {
+        "transfer_count": {
+          "state": "observed",
+          "value": 1
+        }
+      }
+    },
+    {
+      "event_id": "evt-005-states",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:02:00Z",
+      "received_at": "2026-03-01T10:03:00Z",
+      "block_number": 103,
+      "block_hash": "0xc42b092e57118906c85b8b6eff825fdc38183b7e1c055c6bb7d7b52bde619c1e",
+      "tx_hash": "0xe7bcbdd70bf70f4bd94b0c92ab22a0f101a69288802e15e0f90d8aed39b48cc7",
+      "log_index": 2,
+      "fields": {
+        "zero_observed": {
+          "state": "observed",
+          "value": 0
+        },
+        "unknown_value": {
+          "state": "unknown",
+          "value": null
+        },
+        "empty_reply": {
+          "state": "empty_response",
+          "value": null
+        },
+        "unindexed": {
+          "state": "not_indexed",
+          "value": null
+        }
+      }
+    },
+    {
+      "event_id": "evt-006-external",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "external_record",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": null,
+      "received_at": "2026-03-01T10:02:30+00:00",
+      "fields": {
+        "report_seen": {
+          "state": "observed",
+          "value": true
+        }
+      }
+    },
+    {
+      "event_id": "evt-007-future",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:20:00+00:00",
+      "received_at": "2026-03-01T10:21:00+00:00",
+      "block_number": 110,
+      "block_hash": "0x55604934453a091e43f6c162bafcbf4996b131338a5419fad3943ae861688dcc",
+      "tx_hash": "0x3d66e81139fc34de542370d50a422af8158b1fad91fcab278737d7e06851eaa6",
+      "log_index": 0
+    }
+  ]
+}
