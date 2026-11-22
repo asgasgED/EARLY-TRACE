@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "early-trace"
+version = "0.1.0"
+description = "Reproducible temporal evidence, prediction, and evaluation framework for EARLY-TRACE."
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "pandas",
+    "scikit-learn",
+]
+
+[project.optional-dependencies]
+# Development, linting, and automated tests.
+dev = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "mypy",
+]
+
+# Install only the boosting library selected for a given experiment.
+xgboost = ["xgboost"]
+lightgbm = ["lightgbm"]
+
+# Reserved for inferential analyses when the G5 implementation requires it.
+inference = ["statsmodels"]
+
+# Optional helper for loading a local .env file during development.
+local-env = ["python-dotenv"]
+
+# Optional HTTP client for provider integrations after G1 source/access checks.
+rpc = ["httpx"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["early_trace*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = "src"
+warn_unused_configs = true
+check_untyped_defs = true
+
+[tool.coverage.run]
+branch = true
+source = ["early_trace"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

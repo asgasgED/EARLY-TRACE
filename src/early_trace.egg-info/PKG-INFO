@@ -1,0 +1,23 @@
+Metadata-Version: 2.4
+Name: early-trace
+Version: 0.1.0
+Summary: Reproducible temporal evidence, prediction, and evaluation framework for EARLY-TRACE.
+Requires-Python: >=3.11
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: scikit-learn
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: pytest-cov; extra == "dev"
+Requires-Dist: ruff; extra == "dev"
+Requires-Dist: mypy; extra == "dev"
+Provides-Extra: xgboost
+Requires-Dist: xgboost; extra == "xgboost"
+Provides-Extra: lightgbm
+Requires-Dist: lightgbm; extra == "lightgbm"
+Provides-Extra: inference
+Requires-Dist: statsmodels; extra == "inference"
+Provides-Extra: local-env
+Requires-Dist: python-dotenv; extra == "local-env"
+Provides-Extra: rpc
+Requires-Dist: httpx; extra == "rpc"

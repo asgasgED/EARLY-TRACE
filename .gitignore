@@ -1,0 +1,57 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python environments
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Testing and development tools
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+
+# Operating system
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local and generated datasets
+data/raw/**
+!data/raw/.gitkeep
+
+data/interim/**
+!data/interim/.gitkeep
+
+data/processed/**
+!data/processed/.gitkeep
+
+data/external/**
+!data/external/.gitkeep
+
+# Generated artifacts
+artifacts/models/**
+!artifacts/models/.gitkeep
+
+artifacts/manifests/**
+!artifacts/manifests/.gitkeep
+
+artifacts/certificates/**
+!artifacts/certificates/.gitkeep
+
+artifacts/results/**
+!artifacts/results/.gitkeep
+
+artifacts/logs/**
+!artifacts/logs/.gitkeep
