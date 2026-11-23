@@ -10,6 +10,8 @@ import pytest
 from early_trace.evidence.ledger import load_ledger_json
 from early_trace.evidence.synthetic import make_synthetic_event
 from early_trace.temporal.availability import (
+    AnomalyKind,
+    AnomalyStatus,
     AvailabilityStatus,
     ExclusionReason,
     InvalidCutoffError,
@@ -89,9 +91,14 @@ def test_invalid_block_time_is_invalid(block_time, reason):
     assert result.reason is reason
 
 
-def test_received_before_block_time_is_inconsistent():
+def test_received_before_block_time_is_an_anomaly_not_an_exclusion():
+    # ET24 keeps t_block and t_ingest as independent clocks: no universal rejection.
     result = check_availability(event("2026-03-01T09:59:00+00:00"), CUTOFF)
-    assert result.reason is ExclusionReason.RECEIVED_BEFORE_BLOCK_TIME
+    assert result.is_available
+    (anomaly,) = result.anomalies
+    assert anomaly.kind is AnomalyKind.RECEIVED_BEFORE_BLOCK_TIME
+    assert anomaly.status is AnomalyStatus.PENDING_RESOLUTION
+    assert anomaly.early_by_seconds == 60.0
 
 
 def test_mixed_timezones_are_normalized_to_utc():

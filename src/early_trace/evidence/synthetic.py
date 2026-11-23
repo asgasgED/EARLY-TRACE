@@ -6,9 +6,11 @@ import hashlib
 from collections.abc import Iterable
 
 from early_trace.evidence.events import FieldsInput, LedgerEvent, SourceType, TimestampInput
+from early_trace.evidence.observation import ObservationContext
 
 SYNTHETIC_SOURCE = "synthetic-provider-a"
 SYNTHETIC_ENTITY = "synthetic-entity-1"
+SYNTHETIC_CHAIN_ID = 1
 
 
 def synthetic_hash(label: str) -> str:
@@ -27,25 +29,42 @@ def make_synthetic_event(
     source_version: str | None = "v1",
     block_number: int = 100,
     log_index: int = 0,
+    chain_id: int | None = SYNTHETIC_CHAIN_ID,
+    trace_address: tuple[int, ...] = (0,),
+    block_label: str | None = None,
+    tx_label: str | None = None,
+    context: ObservationContext | None = None,
     fields: FieldsInput = (),
     omit: Iterable[str] = (),
 ) -> LedgerEvent:
-    """Create an event with full provenance for ``source_type``; ``omit`` drops fields.
+    """Create an event with full provenance and identity for ``source_type``.
 
-    Timestamps are mandatory keyword arguments: this factory never invents time.
+    ``block_label``/``tx_label`` choose which synthetic block/transaction hash is used
+    (default: derived from ``block_number`` / ``event_id``), so several records can
+    observe the same object or the same transaction under different blocks. ``omit``
+    drops the named identity/provenance fields. Timestamps are mandatory keyword
+    arguments: this factory never invents time.
     """
     values: dict[str, object] = {
         "block_number": block_number,
-        "block_hash": synthetic_hash(f"block:{block_number}"),
-        "tx_hash": synthetic_hash(f"tx:{event_id}"),
+        "block_hash": synthetic_hash(f"block:{block_label or block_number}"),
+        "tx_hash": synthetic_hash(f"tx:{tx_label or event_id}"),
         "log_index": log_index,
+        "chain_id": chain_id,
+        "trace_address": trace_address,
     }
-    if source_type is SourceType.EXTERNAL_RECORD:
-        values.update(block_number=None, block_hash=None, tx_hash=None, log_index=None)
-    elif source_type is SourceType.ONCHAIN_BLOCK:
-        values.update(tx_hash=None, log_index=None)
-    elif source_type is SourceType.ONCHAIN_TRANSACTION:
-        values.update(log_index=None)
+    drop = {
+        SourceType.EXTERNAL_RECORD: ("block_number", "block_hash", "tx_hash", "log_index"),
+        SourceType.ONCHAIN_BLOCK: ("tx_hash", "log_index"),
+        SourceType.ONCHAIN_TRANSACTION: ("log_index",),
+        SourceType.ONCHAIN_RECEIPT: ("log_index",),
+        SourceType.ONCHAIN_LOG: (),
+        SourceType.ONCHAIN_TRACE: ("log_index",),
+    }[source_type]
+    for name in drop:
+        values[name] = None
+    if source_type is not SourceType.ONCHAIN_TRACE:
+        values["trace_address"] = None
     for name in omit:
         if name not in values:
             raise ValueError(f"cannot omit unknown field: {name!r}")
@@ -58,6 +77,7 @@ def make_synthetic_event(
         block_time=block_time,
         received_at=received_at,
         source_version=source_version,
+        context=context or ObservationContext(),
         fields=fields,
         **values,  # type: ignore[arg-type]
     )

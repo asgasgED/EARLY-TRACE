@@ -7,6 +7,7 @@ from dataclasses import replace
 import pytest
 
 from early_trace.evidence.events import SourceType, ValueState
+from early_trace.schemas.aggregation import AggregationOp, AggregationSpec, OrderingClock
 from early_trace.schemas.feature_schema import (
     AbsenceSpec,
     AvailabilityClock,
@@ -27,11 +28,13 @@ V100 = SchemaVersion.parse("1.0.0")
 V110 = SchemaVersion.parse("1.1.0")
 
 
-def rule(empty: AbsenceSpec | None = None) -> MissingnessRule:
+def rule(empty: AbsenceSpec | None = None, null: AbsenceSpec | None = None) -> MissingnessRule:
     return MissingnessRule(
         unknown=AbsenceSpec.mask_only(),
         empty_response=empty or AbsenceSpec.mask_only(),
         not_indexed=AbsenceSpec.mask_only(),
+        null_value=null or AbsenceSpec.mask_only(),
+        not_received=AbsenceSpec.mask_only(),
     )
 
 
@@ -44,11 +47,14 @@ def spec(name: str = "transfer_count", **overrides) -> FeatureSpec:
         source_field="transfer_count",
         availability_clock=AvailabilityClock.RECEIVED_AT,
         missingness=rule(),
+        aggregation=AggregationSpec(AggregationOp.SUM, 1),
         feature_version=1,
         introduced_in=V100,
         unit="transfers",
     )
     base.update(overrides)
+    if "aggregation" not in overrides and base["dtype"] is not FeatureDType.INT:
+        base["aggregation"] = AggregationSpec(AggregationOp.LATEST, 1, OrderingClock.RECEIVED_AT)
     return FeatureSpec(**base)
 
 
@@ -87,7 +93,15 @@ def test_unsupported_dtype_rejected(dtype):
 
 
 @pytest.mark.parametrize(
-    "key", ["description", "source_type", "availability_clock", "missingness", "feature_version"]
+    "key",
+    [
+        "description",
+        "source_type",
+        "availability_clock",
+        "missingness",
+        "aggregation",
+        "feature_version",
+    ],
 )
 def test_incomplete_definition_rejected(key):
     raw = spec().to_dict()
@@ -129,16 +143,27 @@ def test_block_time_is_not_an_availability_clock():
         FeatureSpec.from_dict(raw)
 
 
-def test_unknown_and_not_indexed_can_never_be_filled():
-    for name in ("unknown", "not_indexed"):
-        kwargs = {
-            "unknown": AbsenceSpec.mask_only(),
-            "empty_response": AbsenceSpec.mask_only(),
-            "not_indexed": AbsenceSpec.mask_only(),
-        }
-        kwargs[name] = AbsenceSpec.fill(0)
-        with pytest.raises(InvalidFeatureSpecError):
-            MissingnessRule(**kwargs)
+@pytest.mark.parametrize("name", ["unknown", "not_indexed", "not_received"])
+def test_unknown_not_indexed_and_not_received_can_never_be_filled(name):
+    kwargs = {
+        field: AbsenceSpec.mask_only()
+        for field in ("unknown", "empty_response", "not_indexed", "null_value", "not_received")
+    }
+    kwargs[name] = AbsenceSpec.fill(0)
+    with pytest.raises(InvalidFeatureSpecError):
+        MissingnessRule(**kwargs)
+
+
+@pytest.mark.parametrize("name", ["empty_response", "null_value"])
+def test_empty_response_and_null_may_declare_a_typed_fill(name):
+    kwargs = {
+        field: AbsenceSpec.mask_only()
+        for field in ("unknown", "empty_response", "not_indexed", "null_value", "not_received")
+    }
+    kwargs[name] = AbsenceSpec.fill(0)
+    assert getattr(MissingnessRule(**kwargs), name).fill_value == 0
+    with pytest.raises(InvalidFeatureSpecError):
+        spec(missingness=MissingnessRule(**{**kwargs, name: AbsenceSpec.fill("zero")}))
 
 
 def test_ambiguous_absence_declarations_rejected():

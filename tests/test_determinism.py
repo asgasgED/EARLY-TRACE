@@ -21,8 +21,8 @@ SRC = ROOT / "src"
 FIXTURES = ROOT / "fixtures"
 BASIC = str(FIXTURES / "synthetic" / "ledger_basic.json")
 ADVERSARIAL = str(FIXTURES / "adversarial" / "ledger_adversarial_timestamps.json")
-BASIC_GOLDEN_HASH = "9330b1e1c0ed222febde0455a899a8d0045bd5143d4e99ffc98f808f3dcdc87d"
-ADVERSARIAL_GOLDEN_HASH = "a94d962fed71dbcee8387f08567bf8f7949fc34b927b9e4bf3f5c86007a996ca"
+BASIC_GOLDEN_HASH = "e159ea866c6177bc39cf0287fe3f96027689e9abf5247ad9b4d22492e321f0ad"
+ADVERSARIAL_GOLDEN_HASH = "c8f7f46590576defb9dd5d8f5a560b0ae657f634059c14e565afacfd0d127bda"
 
 
 @pytest.mark.parametrize("path", [BASIC, ADVERSARIAL])

@@ -17,7 +17,8 @@
       "block_number": 100,
       "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
       "tx_hash": "0x183f6d6c37b91ab40f9b948cc56cadec6839ab062fa9281a049aed536af35506",
-      "log_index": 0
+      "log_index": 0,
+      "chain_id": 1
     },
     {
       "event_id": "adv-received-missing",
@@ -30,7 +31,8 @@
       "block_number": 100,
       "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
       "tx_hash": "0x80211ae3f279aedcabcca1cbb1111dc0c487145fdd8216ff58175b981e7591be",
-      "log_index": 1
+      "log_index": 1,
+      "chain_id": 1
     },
     {
       "event_id": "adv-received-naive",
@@ -43,7 +45,8 @@
       "block_number": 100,
       "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
       "tx_hash": "0x82eda8c86518d61e800b651157f97e549f260c8d05819c81aa65d760f82474c3",
-      "log_index": 2
+      "log_index": 2,
+      "chain_id": 1
     },
     {
       "event_id": "adv-received-date-only",
@@ -56,7 +59,8 @@
       "block_number": 100,
       "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
       "tx_hash": "0xe88d131b04be5639f0872945a2118f38c95c71494fa9eb0bf458351f300af34a",
-      "log_index": 3
+      "log_index": 3,
+      "chain_id": 1
     },
     {
       "event_id": "adv-received-epoch-int",
@@ -69,7 +73,8 @@
       "block_number": 100,
       "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
       "tx_hash": "0x3b394f2fb078405c003f9e8125d8d578861fa8c933df6ce1c9aecd1a1995d9ba",
-      "log_index": 4
+      "log_index": 4,
+      "chain_id": 1
     },
     {
       "event_id": "adv-received-garbage",
@@ -82,7 +87,8 @@
       "block_number": 100,
       "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
       "tx_hash": "0xfaa1d1d65754ae63ff86d659bb5301600e09dda9b5a5cd6bd8aa38b9a929d70c",
-      "log_index": 5
+      "log_index": 5,
+      "chain_id": 1
     },
     {
       "event_id": "adv-block-naive",
@@ -95,7 +101,8 @@
       "block_number": 100,
       "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
       "tx_hash": "0x4d147fb2311a6e8feba0201e533b018f72e187a7ccf51be755ee66df6856939d",
-      "log_index": 6
+      "log_index": 6,
+      "chain_id": 1
     },
     {
       "event_id": "adv-block-garbage",
@@ -108,7 +115,8 @@
       "block_number": 100,
       "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
       "tx_hash": "0x3ffd7a3bead1a11a36aa47c5a47a1bd12a20e8c161d9c4a78672b5ce18541241",
-      "log_index": 7
+      "log_index": 7,
+      "chain_id": 1
     },
     {
       "event_id": "adv-received-before-block",
@@ -121,7 +129,8 @@
       "block_number": 101,
       "block_hash": "0xc355cc002e7321194a1cc72124a294e9d29d7ac5894efa19122bfc1734a8d2f5",
       "tx_hash": "0x0a5ce7114990394ff056bb2fa276632506cc165412c271e83c2acf7355a62898",
-      "log_index": 0
+      "log_index": 0,
+      "chain_id": 1
     },
     {
       "event_id": "adv-missing-log-index",
@@ -133,7 +142,8 @@
       "received_at": "2026-03-01T10:01:00+00:00",
       "block_number": 100,
       "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
-      "tx_hash": "0x529fdc4a735ed7b93c2f8e68b31080f5555a1dae6bfb0c1bdb25d6b82febaac9"
+      "tx_hash": "0x529fdc4a735ed7b93c2f8e68b31080f5555a1dae6bfb0c1bdb25d6b82febaac9",
+      "chain_id": 1
     },
     {
       "event_id": "adv-missing-tx-hash",
@@ -144,7 +154,8 @@
       "block_time": "2026-03-01T10:00:00+00:00",
       "received_at": "2026-03-01T10:01:00+00:00",
       "block_number": 100,
-      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8"
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "chain_id": 1
     },
     {
       "event_id": "adv-dup",
@@ -157,7 +168,8 @@
       "block_number": 100,
       "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
       "tx_hash": "0xb15d246e7b8f6575d94449a02278ec0310f82e4a67c911d870c2f2caf84d9736",
-      "log_index": 8
+      "log_index": 8,
+      "chain_id": 1
     },
     {
       "event_id": "adv-dup",
@@ -170,7 +182,8 @@
       "block_number": 100,
       "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
       "tx_hash": "0xb15d246e7b8f6575d94449a02278ec0310f82e4a67c911d870c2f2caf84d9736",
-      "log_index": 8
+      "log_index": 8,
+      "chain_id": 1
     },
     {
       "event_id": "adv-conflict",
@@ -189,7 +202,8 @@
           "state": "observed",
           "value": 1
         }
-      }
+      },
+      "chain_id": 1
     },
     {
       "event_id": "adv-conflict",
@@ -208,7 +222,8 @@
           "state": "observed",
           "value": 2
         }
-      }
+      },
+      "chain_id": 1
     },
     {
       "event_id": "adv-conflict",
@@ -227,7 +242,8 @@
           "state": "observed",
           "value": 5
         }
-      }
+      },
+      "chain_id": 1
     }
   ]
 }

@@ -79,7 +79,9 @@ def test_future_events_do_not_change_included_events_provenance_or_hash():
 
     assert snap_a.events == snap_b.events
     assert snap_a.provenance == snap_b.provenance
-    assert [e.content_hash for e in snap_a.events] == [e.content_hash for e in snap_b.events]
+    assert [e.observation_hash for e in snap_a.events] == [
+        e.observation_hash for e in snap_b.events
+    ]
     assert snap_a.snapshot_hash == snap_b.snapshot_hash
     assert snap_a.conflicting_event_ids == snap_b.conflicting_event_ids == ()
     assert len(snap_b.exclusions) == len(future(cutoff))
@@ -103,3 +105,27 @@ def test_snapshot_changes_only_when_the_cutoff_reveals_more_evidence():
     assert set(early.event_ids) < set(late.event_ids)
     assert early.snapshot_hash != late.snapshot_hash
     assert early.events == late.events[: len(early.events)]
+
+
+def test_prefix_invariance_holds_with_anomalies_and_multiple_observations():
+    cutoff = minutes(10)
+    anomalous = make_synthetic_event(  # received before its block time: admitted and flagged
+        "anomalous", block_time=minutes(4), received_at=minutes(3), log_index=30
+    )
+    second_path = make_synthetic_event(  # another provider's observation of past-1
+        "past-1-again",
+        block_time=minutes(1),
+        received_at=minutes(6),
+        log_index=1,
+        source="synthetic-provider-b",
+        tx_label="past-1",
+        fields={"transfer_count": ObservedValue.observed(1)},
+    )
+    past = history() + [anomalous, second_path]
+    snap_a = make_asof_snapshot(cutoff, past)
+    snap_b = make_asof_snapshot(cutoff, past + future(cutoff))
+    assert snap_a.snapshot_hash == snap_b.snapshot_hash
+    assert snap_a.objects == snap_b.objects
+    assert snap_a.placement_divergences == snap_b.placement_divergences
+    assert snap_a.anomalies == snap_b.anomalies and len(snap_a.anomalies) == 1
+    assert len(snap_a.objects) == len(snap_a.events) - 1  # the second path merged into one object

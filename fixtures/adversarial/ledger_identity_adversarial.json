@@ -1,0 +1,292 @@
+{
+  "fixture": {
+    "id": "ledger_identity_adversarial",
+    "synthetic": true,
+    "reference_cutoff": "2026-03-01T10:30:00+00:00",
+    "notice": "SYNTHETIC FIXTURE: fabricated data for EARLY-TRACE G2 tests. Not real Ethereum data."
+  },
+  "events": [
+    {
+      "event_id": "a1-no-chain",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_receipt",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:01:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0x420177cba4d516169d229642f2ef45414efe9b7709df7b3418c96572fc4d978a",
+      "fields": {
+        "gas_used": {
+          "state": "observed",
+          "value": 1
+        }
+      }
+    },
+    {
+      "event_id": "a2-log-no-index",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:01:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0x1baa6e034e8bb1d2d73aa907a62ca0f8e7dfd07a4eb59499821e19e7d8576616",
+      "chain_id": 1,
+      "fields": {
+        "transfer_value": {
+          "state": "observed",
+          "value": 1
+        }
+      }
+    },
+    {
+      "event_id": "a3-trace-no-position",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_trace",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:01:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0x411086547aa7ecc318b70cbac26487365731252c7faba90a6f3c2c7c951a8631",
+      "chain_id": 1,
+      "fields": {
+        "trace_value": {
+          "state": "observed",
+          "value": 1
+        }
+      }
+    },
+    {
+      "event_id": "a4-external",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "external_record",
+      "source": "synthetic-report-source",
+      "block_time": null,
+      "received_at": "2026-03-01T10:01:00+00:00",
+      "fields": {
+        "report_seen": {
+          "state": "observed",
+          "value": true
+        }
+      }
+    },
+    {
+      "event_id": "a5-content-1",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "prov-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:02:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0x3ae32b386a7bb69da66ef30885ed00cad5f77b6ed8870540d62e0ad10ac49fec",
+      "chain_id": 1,
+      "log_index": 0,
+      "context": {
+        "decoder_version": "dec-1.0"
+      },
+      "fields": {
+        "transfer_value": {
+          "state": "observed",
+          "value": 10
+        }
+      }
+    },
+    {
+      "event_id": "a5-content-2",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "prov-b",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:03:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0x3ae32b386a7bb69da66ef30885ed00cad5f77b6ed8870540d62e0ad10ac49fec",
+      "chain_id": 1,
+      "log_index": 0,
+      "context": {
+        "decoder_version": "dec-1.0"
+      },
+      "fields": {
+        "transfer_value": {
+          "state": "observed",
+          "value": 11
+        }
+      }
+    },
+    {
+      "event_id": "a6-interp-1",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "prov-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:02:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0xa387e8a86be2861f2ee56b35c23a3394976c7b9ff4886df4c69cd9579e3abcc6",
+      "chain_id": 1,
+      "log_index": 0,
+      "context": {
+        "decoder_version": "dec-1.0"
+      },
+      "fields": {
+        "transfer_value": {
+          "state": "observed",
+          "value": 10
+        }
+      }
+    },
+    {
+      "event_id": "a6-interp-2",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "prov-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:03:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0xa387e8a86be2861f2ee56b35c23a3394976c7b9ff4886df4c69cd9579e3abcc6",
+      "chain_id": 1,
+      "log_index": 0,
+      "context": {
+        "decoder_version": "dec-2.0"
+      },
+      "fields": {
+        "transfer_value": {
+          "state": "observed",
+          "value": 1000
+        }
+      }
+    },
+    {
+      "event_id": "a7-tx-block-x",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_transaction",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:02:00+00:00",
+      "block_number": 300,
+      "block_hash": "0x642ddef34542fa1891360fc86a7b83db6d575673b761d57a7ebca891f8cff705",
+      "tx_hash": "0x31070c1ae1cd70fc35bd158388326f69dc5b14ceefd087afd50eead30ff7b161",
+      "chain_id": 1,
+      "fields": {
+        "tx_value": {
+          "state": "observed",
+          "value": 4
+        }
+      }
+    },
+    {
+      "event_id": "a7-tx-block-y",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_transaction",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:03:00+00:00",
+      "block_number": 301,
+      "block_hash": "0x8b362c0b3b2a72265f92ccbc5078f103180d9943aba5c86c43dc54cbe1b61319",
+      "tx_hash": "0x31070c1ae1cd70fc35bd158388326f69dc5b14ceefd087afd50eead30ff7b161",
+      "chain_id": 1,
+      "fields": {
+        "tx_value": {
+          "state": "observed",
+          "value": 4
+        }
+      }
+    },
+    {
+      "event_id": "a8-rcpt-x",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_receipt",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:04:00+00:00",
+      "block_number": 310,
+      "block_hash": "0x642ddef34542fa1891360fc86a7b83db6d575673b761d57a7ebca891f8cff705",
+      "tx_hash": "0x89e691d1c0f1a56b31b1bad64981a8472f33997ff5f1bd30d2d85eb188f6b603",
+      "chain_id": 1,
+      "fields": {
+        "gas_used": {
+          "state": "observed",
+          "value": 2
+        }
+      }
+    },
+    {
+      "event_id": "a8-rcpt-y",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_receipt",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:05:00+00:00",
+      "block_number": 311,
+      "block_hash": "0x8b362c0b3b2a72265f92ccbc5078f103180d9943aba5c86c43dc54cbe1b61319",
+      "tx_hash": "0x89e691d1c0f1a56b31b1bad64981a8472f33997ff5f1bd30d2d85eb188f6b603",
+      "chain_id": 1,
+      "fields": {
+        "gas_used": {
+          "state": "observed",
+          "value": 2
+        }
+      }
+    },
+    {
+      "event_id": "a9-finality-fin",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_receipt",
+      "source": "prov-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:06:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0x338c76a94e33e0563e7e3a22a41177a57d9ac066604a85180808d2a5045a994c",
+      "chain_id": 1,
+      "context": {
+        "finality": "finalized"
+      },
+      "fields": {
+        "gas_used": {
+          "state": "observed",
+          "value": 3
+        }
+      }
+    },
+    {
+      "event_id": "a9-finality-reorg",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_receipt",
+      "source": "prov-b",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:06:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0x338c76a94e33e0563e7e3a22a41177a57d9ac066604a85180808d2a5045a994c",
+      "chain_id": 1,
+      "context": {
+        "finality": "reorged"
+      },
+      "fields": {
+        "gas_used": {
+          "state": "observed",
+          "value": 3
+        }
+      }
+    }
+  ]
+}

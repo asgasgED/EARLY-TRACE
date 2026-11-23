@@ -65,3 +65,50 @@ def test_timestamp_keys_must_be_explicit(key):
     del raw[key]
     with pytest.raises(LedgerContractError):
         event_from_record(raw)
+
+
+def test_identity_and_context_fields_load_from_records():
+    event = event_from_record(
+        record(
+            source_type="onchain_trace",
+            chain_id=1,
+            trace_address=[0, 2],
+            context={
+                "method": "trace_transaction",
+                "finality": "finalized",
+                "decoder_version": "d1",
+            },
+            fields={"x": {"state": "null", "value": None}},
+        )
+    )
+    assert (event.chain_id, event.trace_address) == (1, (0, 2))
+    assert event.context.method == "trace_transaction"
+    assert event.context.finality.value == "finalized"
+    assert dict(event.fields)["x"].state.value == "null"
+
+
+def test_an_empty_trace_address_is_the_root_call_and_differs_from_absent():
+    root = event_from_record(record(source_type="onchain_trace", trace_address=[]))
+    absent = event_from_record(record(source_type="onchain_trace"))
+    assert root.trace_address == () and absent.trace_address is None
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"chain_id": 0},
+        {"chain_id": "1"},
+        {"chain_id": True},
+        {"trace_address": [-1]},
+        {"trace_address": "0.1"},
+        {"trace_address": [True]},
+        {"context": {"unexpected": "x"}},
+        {"context": {"finality": "maybe"}},
+        {"context": {"response_hash": "0xABC"}},
+        {"context": {"method": ""}},
+        {"context": "not-an-object"},
+    ],
+)
+def test_invalid_identity_and_context_records_are_rejected(bad):
+    with pytest.raises(LedgerContractError):
+        event_from_record(record(**bad))

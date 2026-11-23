@@ -3,14 +3,19 @@
 A schema documents and validates features; it does not decide which features
 help detection. Rules enforced here:
 
-* Every feature declares its evidence source, availability clock and how each
-  absence state (unknown / empty response / not indexed) is treated. Nothing is
-  defaulted, so absence can never be ambiguous.
-* ``unknown`` and ``not_indexed`` can only be masked, never filled with a value.
+* Every feature declares its evidence source, availability clock, aggregation rule and
+  how each absence state (null / unknown / empty response / not indexed / not received)
+  is treated. Nothing is defaulted, so neither absence nor aggregation can be implicit.
+* ``unknown``, ``not_indexed`` and ``not_received`` can only be masked, never filled.
 * Availability is decided by ``received_at`` only; ``block_time`` is not an
   available clock.
-* Evolution is append-only: an existing feature keeps its meaning unless its
-  ``feature_version`` is explicitly bumped (see ``validate_evolution``).
+* Evolution is strictly append-only (see ``check_evolution``): existing features keep
+  their position and meaning, new features go at the end, and any semantic change
+  (including the aggregation rule) needs an explicit version bump. Because the order of
+  ``features`` is the column order of the future matrix, it is part of the contract.
+
+Serialization ``feature-schema/2`` adds ``aggregation`` to each feature and the ``null_value``
+and ``not_received`` rules; documents lacking them are rejected, never defaulted.
 """
 
 from __future__ import annotations
@@ -24,6 +29,12 @@ from typing import Any, cast
 
 from early_trace.evidence.events import Scalar, SourceType, ValueState
 from early_trace.infrastructure.hashing import sha256_hex
+from early_trace.schemas.aggregation import (
+    AggregationOp,
+    AggregationSpec,
+    AggregationSpecError,
+    ResultState,
+)
 
 _NAME_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 _VERSION_RE = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
@@ -45,8 +56,37 @@ class InvalidSchemaVersionError(FeatureSchemaError):
     """A schema version is malformed."""
 
 
+class EvolutionIssueKind(str, Enum):
+    SCHEMA_NAME_CHANGED = "schema_name_changed"
+    IDENTICAL_SCHEMA = "identical_schema"
+    VERSION_NOT_INCREASED = "version_not_increased"
+    FEATURE_REMOVED = "feature_removed"
+    FEATURE_MOVED = "feature_moved"
+    FEATURE_INSERTED_NOT_AT_END = "feature_inserted_not_at_end"
+    CHANGED_WITHOUT_VERSION_BUMP = "changed_without_version_bump"
+    AGGREGATION_CHANGED_WITHOUT_RULE_BUMP = "aggregation_changed_without_rule_bump"
+    INTRODUCED_IN_CHANGED = "introduced_in_changed"
+    NEW_FEATURE_WRONG_INTRODUCED_IN = "new_feature_wrong_introduced_in"
+
+
+@dataclass(frozen=True, slots=True)
+class EvolutionIssue:
+    """One precise reason why a schema change is not a valid evolution."""
+
+    kind: EvolutionIssueKind
+    feature: str | None
+    detail: str
+
+    def __str__(self) -> str:
+        return f"[{self.kind.value}] {self.detail}"
+
+
 class SchemaEvolutionError(FeatureSchemaError):
-    """A new schema silently changes or drops what an older one defined."""
+    """A new schema silently changes, reorders or drops what an older one defined."""
+
+    def __init__(self, issues: tuple[EvolutionIssue, ...]) -> None:
+        self.issues = issues
+        super().__init__("invalid schema evolution: " + "; ".join(str(i) for i in issues))
 
 
 class FeatureDType(str, Enum):
@@ -135,33 +175,75 @@ class AbsenceSpec:
         return {"treatment": self.treatment.value, "fill_value": self.fill_value}
 
 
+_MASK_ONLY_STATES = ("unknown", "not_indexed", "not_received")
+_VALUE_STATE_RULE = {
+    ValueState.NULL: "null_value",
+    ValueState.UNKNOWN: "unknown",
+    ValueState.EMPTY_RESPONSE: "empty_response",
+    ValueState.NOT_INDEXED: "not_indexed",
+}
+_RESULT_STATE_RULE = {
+    ResultState.NULL: "null_value",
+    ResultState.UNKNOWN: "unknown",
+    ResultState.EMPTY_RESPONSE: "empty_response",
+    ResultState.NOT_INDEXED: "not_indexed",
+    ResultState.NOT_RECEIVED: "not_received",
+}
+
+
 @dataclass(frozen=True, slots=True)
 class MissingnessRule:
-    """Explicit treatment of every absence state; all three must be declared."""
+    """Explicit treatment of every absence state; all five must be declared.
+
+    ``null_value`` (the source returned null) and ``empty_response`` are defined technical
+    states and may declare a fill; ``unknown``, ``not_indexed`` and ``not_received`` never can.
+    Conflicts and ambiguities are not absences: they are always masked and never filled.
+    """
 
     unknown: AbsenceSpec
     empty_response: AbsenceSpec
     not_indexed: AbsenceSpec
+    null_value: AbsenceSpec
+    not_received: AbsenceSpec
 
     def __post_init__(self) -> None:
-        for name in ("unknown", "empty_response", "not_indexed"):
+        for name in ("unknown", "empty_response", "not_indexed", "null_value", "not_received"):
             if not isinstance(getattr(self, name), AbsenceSpec):
                 raise InvalidFeatureSpecError(f"missingness.{name} must be an AbsenceSpec")
-        for name in ("unknown", "not_indexed"):
+        for name in _MASK_ONLY_STATES:
             if getattr(self, name).treatment is not AbsenceTreatment.MASK_ONLY:
                 raise InvalidFeatureSpecError(f"'{name}' may only be masked, never filled")
 
     def spec_for(self, state: ValueState) -> AbsenceSpec:
         if state is ValueState.OBSERVED:
             raise ValueError("an observed value has no absence rule")
-        return cast(AbsenceSpec, getattr(self, state.value))
+        return cast(AbsenceSpec, getattr(self, _VALUE_STATE_RULE[state]))
+
+    def treatment_for(self, state: ResultState) -> AbsenceSpec | None:
+        """Rule for an aggregated absence state; ``None`` for states that are never filled."""
+        name = _RESULT_STATE_RULE.get(state)
+        return None if name is None else cast(AbsenceSpec, getattr(self, name))
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "unknown": self.unknown.to_dict(),
             "empty_response": self.empty_response.to_dict(),
             "not_indexed": self.not_indexed.to_dict(),
+            "null_value": self.null_value.to_dict(),
+            "not_received": self.not_received.to_dict(),
         }
+
+
+_OP_DTYPES: dict[AggregationOp, frozenset[FeatureDType]] = {
+    AggregationOp.SINGLE: frozenset(FeatureDType),
+    AggregationOp.LATEST: frozenset(FeatureDType),
+    AggregationOp.EARLIEST: frozenset(FeatureDType),
+    AggregationOp.COUNT_DISTINCT: frozenset({FeatureDType.INT}),
+    AggregationOp.SUM: frozenset({FeatureDType.INT, FeatureDType.FLOAT}),
+    AggregationOp.MIN: frozenset({FeatureDType.INT, FeatureDType.FLOAT}),
+    AggregationOp.MAX: frozenset({FeatureDType.INT, FeatureDType.FLOAT}),
+    AggregationOp.MEAN: frozenset({FeatureDType.FLOAT}),
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -175,6 +257,7 @@ class FeatureSpec:
     source_field: str
     availability_clock: AvailabilityClock
     missingness: MissingnessRule
+    aggregation: AggregationSpec
     feature_version: int
     introduced_in: SchemaVersion
     unit: str | None = None
@@ -193,6 +276,7 @@ class FeatureSpec:
             ("source_type", SourceType),
             ("availability_clock", AvailabilityClock),
             ("missingness", MissingnessRule),
+            ("aggregation", AggregationSpec),
             ("introduced_in", SchemaVersion),
         ):
             if not isinstance(getattr(self, attr), kind):
@@ -205,7 +289,12 @@ class FeatureSpec:
             or self.feature_version < 1
         ):
             raise InvalidFeatureSpecError(f"feature '{self.name}': feature_version must be >= 1")
-        for state in (ValueState.EMPTY_RESPONSE,):
+        if self.dtype not in _OP_DTYPES[self.aggregation.op]:
+            raise InvalidFeatureSpecError(
+                f"feature '{self.name}': aggregation '{self.aggregation.op.value}' "
+                f"cannot produce dtype {self.dtype.value}"
+            )
+        for state in (ValueState.EMPTY_RESPONSE, ValueState.NULL):
             spec = self.missingness.spec_for(state)
             if spec.fill_value is not None and not _value_matches(self.dtype, spec.fill_value):
                 raise InvalidFeatureSpecError(
@@ -223,6 +312,7 @@ class FeatureSpec:
             "source_field": self.source_field,
             "availability_clock": self.availability_clock.value,
             "missingness": self.missingness.to_dict(),
+            "aggregation": self.aggregation.to_dict(),
             "feature_version": self.feature_version,
             "introduced_in": str(self.introduced_in),
         }
@@ -231,11 +321,21 @@ class FeatureSpec:
     def from_dict(cls, raw: Mapping[str, Any]) -> FeatureSpec:
         required = {
             "name", "dtype", "description", "source_type", "source_field",
-            "availability_clock", "missingness", "feature_version", "introduced_in",
+            "availability_clock", "missingness", "aggregation", "feature_version",
+            "introduced_in",
         }  # fmt: skip
         _check_keys(raw, required, {"unit"}, "feature")
         miss = raw["missingness"]
-        _check_keys(miss, {"unknown", "empty_response", "not_indexed"}, set(), "missingness")
+        _check_keys(
+            miss,
+            {"unknown", "empty_response", "not_indexed", "null_value", "not_received"},
+            set(),
+            "missingness",
+        )
+        try:
+            aggregation = AggregationSpec.from_dict(raw["aggregation"])
+        except AggregationSpecError as exc:
+            raise InvalidFeatureSpecError(f"feature '{raw['name']}': {exc}") from exc
         return cls(
             name=raw["name"],
             dtype=_enum(FeatureDType, raw["dtype"], "dtype"),
@@ -249,7 +349,10 @@ class FeatureSpec:
                 unknown=_absence_from_dict(miss["unknown"]),
                 empty_response=_absence_from_dict(miss["empty_response"]),
                 not_indexed=_absence_from_dict(miss["not_indexed"]),
+                null_value=_absence_from_dict(miss["null_value"]),
+                not_received=_absence_from_dict(miss["not_received"]),
             ),
+            aggregation=aggregation,
             feature_version=raw["feature_version"],
             introduced_in=SchemaVersion.parse(raw["introduced_in"]),
             unit=raw.get("unit"),
@@ -313,6 +416,13 @@ class FeatureSchema:
     def feature_names(self) -> tuple[str, ...]:
         return tuple(f.name for f in self.features)
 
+    def column_index(self, name: str) -> int:
+        """Position of ``name``; this is its column in the future feature matrix."""
+        try:
+            return self.feature_names.index(name)
+        except ValueError:
+            raise KeyError(name) from None
+
     def get(self, name: str) -> FeatureSpec:
         for feature in self.features:
             if feature.name == name:
@@ -342,35 +452,164 @@ class FeatureSchema:
         )
 
 
-def validate_evolution(previous: FeatureSchema, new: FeatureSchema) -> None:
-    """Raise ``SchemaEvolutionError`` unless ``new`` extends ``previous`` safely.
+_DIFF_FIELDS = (
+    "dtype",
+    "description",
+    "unit",
+    "source_type",
+    "source_field",
+    "availability_clock",
+    "missingness",
+    "aggregation",
+    "feature_version",
+)
 
-    Requires a strictly greater version, no removed features, no change to a
-    feature's definition without a higher ``feature_version``, and new features
-    introduced after the previous version.
-    """
+
+def _changed_fields(old: FeatureSpec, new: FeatureSpec) -> tuple[str, ...]:
+    before, after = old.to_dict(), new.to_dict()
+    return tuple(name for name in _DIFF_FIELDS if before[name] != after[name])
+
+
+def _order_issues(previous: FeatureSchema, new: FeatureSchema) -> list[EvolutionIssue]:
+    old_names = previous.feature_names
+    new_names = new.feature_names
+    issues: list[EvolutionIssue] = []
+
+    survivors_old = [n for n in old_names if n in new_names]
+    survivors_new = [n for n in new_names if n in old_names]
+    if survivors_old != survivors_new:
+        for name in survivors_old:
+            if survivors_old.index(name) != survivors_new.index(name):
+                issues.append(
+                    EvolutionIssue(
+                        EvolutionIssueKind.FEATURE_MOVED,
+                        name,
+                        f"'{name}' moved from position {old_names.index(name)} "
+                        f"to {new_names.index(name)}; existing features keep their position",
+                    )
+                )
+
+    last_old = max((new_names.index(n) for n in survivors_new), default=-1)
+    for position, name in enumerate(new_names):
+        if name not in old_names and position < last_old:
+            displaced = next(n for n in new_names[position + 1 :] if n in old_names)
+            issues.append(
+                EvolutionIssue(
+                    EvolutionIssueKind.FEATURE_INSERTED_NOT_AT_END,
+                    name,
+                    f"new feature '{name}' was inserted at position {position}, displacing "
+                    f"existing feature '{displaced}'; new features may only be appended",
+                )
+            )
+    return issues
+
+
+def _definition_issues(old: FeatureSpec, new: FeatureSpec) -> list[EvolutionIssue]:
+    if new.introduced_in != old.introduced_in:
+        return [
+            EvolutionIssue(
+                EvolutionIssueKind.INTRODUCED_IN_CHANGED,
+                old.name,
+                f"'{old.name}': introduced_in changed from {old.introduced_in} "
+                f"to {new.introduced_in}",
+            )
+        ]
+    changed = _changed_fields(old, new)
+    if not changed or changed == ("feature_version",):
+        return []
+    issues: list[EvolutionIssue] = []
+    if new.feature_version <= old.feature_version:
+        issues.append(
+            EvolutionIssue(
+                EvolutionIssueKind.CHANGED_WITHOUT_VERSION_BUMP,
+                old.name,
+                f"'{old.name}' changed ({', '.join(changed)}) without increasing feature_version "
+                f"(still {new.feature_version})",
+            )
+        )
+    if "aggregation" in changed and new.aggregation.rule_version <= old.aggregation.rule_version:
+        issues.append(
+            EvolutionIssue(
+                EvolutionIssueKind.AGGREGATION_CHANGED_WITHOUT_RULE_BUMP,
+                old.name,
+                f"'{old.name}': aggregation changed without increasing rule_version "
+                f"(still {new.aggregation.rule_version})",
+            )
+        )
+    return issues
+
+
+def check_evolution(previous: FeatureSchema, new: FeatureSchema) -> tuple[EvolutionIssue, ...]:
+    """Every reason why ``new`` is not a valid append-only evolution of ``previous``."""
     if previous.name != new.name:
-        raise SchemaEvolutionError(f"schema name changed: {previous.name!r} -> {new.name!r}")
+        return (
+            EvolutionIssue(
+                EvolutionIssueKind.SCHEMA_NAME_CHANGED,
+                None,
+                f"schema name changed: {previous.name!r} -> {new.name!r}",
+            ),
+        )
+    if previous == new:
+        return (
+            EvolutionIssue(
+                EvolutionIssueKind.IDENTICAL_SCHEMA,
+                None,
+                f"schemas are identical (version {new.version}); nothing to evolve",
+            ),
+        )
+
+    issues: list[EvolutionIssue] = []
     if not previous.version < new.version:
-        raise SchemaEvolutionError(f"version must increase: {previous.version} -> {new.version}")
+        issues.append(
+            EvolutionIssue(
+                EvolutionIssueKind.VERSION_NOT_INCREASED,
+                None,
+                f"version must increase: {previous.version} -> {new.version}",
+            )
+        )
 
     current = {f.name: f for f in new.features}
     for old in previous.features:
         updated = current.get(old.name)
         if updated is None:
-            raise SchemaEvolutionError(f"feature '{old.name}' was removed")
-        if updated == old:
-            continue
-        if updated.introduced_in != old.introduced_in:
-            raise SchemaEvolutionError(f"feature '{old.name}': introduced_in cannot change")
-        if updated.feature_version <= old.feature_version:
-            raise SchemaEvolutionError(
-                f"feature '{old.name}' changed without increasing feature_version"
+            issues.append(
+                EvolutionIssue(
+                    EvolutionIssueKind.FEATURE_REMOVED,
+                    old.name,
+                    f"feature '{old.name}' (position {previous.feature_names.index(old.name)}) "
+                    "was removed",
+                )
             )
+        else:
+            issues.extend(_definition_issues(old, updated))
 
-    previous_names = {f.name for f in previous.features}
+    issues.extend(_order_issues(previous, new))
+
+    previous_names = set(previous.feature_names)
     for feature in new.features:
-        if feature.name not in previous_names and not previous.version < feature.introduced_in:
-            raise SchemaEvolutionError(
-                f"new feature '{feature.name}' must be introduced after {previous.version}"
+        if feature.name in previous_names:
+            continue
+        if not previous.version < feature.introduced_in <= new.version:
+            issues.append(
+                EvolutionIssue(
+                    EvolutionIssueKind.NEW_FEATURE_WRONG_INTRODUCED_IN,
+                    feature.name,
+                    f"new feature '{feature.name}' declares introduced_in {feature.introduced_in}"
+                    f" but must be introduced after {previous.version} and by {new.version}",
+                )
             )
+    return tuple(issues)
+
+
+def validate_evolution(previous: FeatureSchema, new: FeatureSchema) -> None:
+    """Raise ``SchemaEvolutionError`` (with every issue in ``.issues``) unless ``new`` is valid.
+
+    Valid means: same schema name, strictly greater version, no feature removed, existing
+    features at their original positions, new features only appended with an introducing
+    version in ``(previous.version, new.version]``, and any change to an existing feature
+    carrying a higher ``feature_version`` (and a higher aggregation ``rule_version`` when
+    the aggregation changed).
+    """
+    issues = check_evolution(previous, new)
+    if issues:
+        raise SchemaEvolutionError(issues)

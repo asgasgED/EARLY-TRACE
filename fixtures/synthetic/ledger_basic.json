@@ -22,7 +22,8 @@
           "state": "observed",
           "value": 3
         }
-      }
+      },
+      "chain_id": 1
     },
     {
       "event_id": "evt-002-late",
@@ -41,7 +42,8 @@
           "state": "observed",
           "value": 7
         }
-      }
+      },
+      "chain_id": 1
     },
     {
       "event_id": "evt-003-boundary",
@@ -52,7 +54,8 @@
       "block_time": "2026-03-01T10:04:00+00:00",
       "received_at": "2026-03-01T10:05:00+00:00",
       "block_number": 101,
-      "block_hash": "0xc355cc002e7321194a1cc72124a294e9d29d7ac5894efa19122bfc1734a8d2f5"
+      "block_hash": "0xc355cc002e7321194a1cc72124a294e9d29d7ac5894efa19122bfc1734a8d2f5",
+      "chain_id": 1
     },
     {
       "event_id": "evt-004-offset",
@@ -71,7 +74,8 @@
           "state": "observed",
           "value": 1
         }
-      }
+      },
+      "chain_id": 1
     },
     {
       "event_id": "evt-005-states",
@@ -101,8 +105,13 @@
         "unindexed": {
           "state": "not_indexed",
           "value": null
+        },
+        "null_field": {
+          "state": "null",
+          "value": null
         }
-      }
+      },
+      "chain_id": 1
     },
     {
       "event_id": "evt-006-external",
@@ -130,7 +139,8 @@
       "block_number": 110,
       "block_hash": "0x55604934453a091e43f6c162bafcbf4996b131338a5419fad3943ae861688dcc",
       "tx_hash": "0x3d66e81139fc34de542370d50a422af8158b1fad91fcab278737d7e06851eaa6",
-      "log_index": 0
+      "log_index": 0,
+      "chain_id": 1
     }
   ]
 }

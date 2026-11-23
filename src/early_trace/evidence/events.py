@@ -16,6 +16,11 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, TypeAlias, cast
 
+from early_trace.evidence.errors import LedgerContractError
+from early_trace.evidence.observation import ObservationContext
+
+__all__ = ["LedgerContractError"]
+
 TimestampInput: TypeAlias = datetime | str | None
 Scalar: TypeAlias = bool | int | float | str
 
@@ -23,16 +28,14 @@ _NAME_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 _HASH_RE = re.compile(r"^0x[0-9a-f]{64}$")
 
 
-class LedgerContractError(ValueError):
-    """A ledger record violates the structural contract."""
-
-
 class SourceType(str, Enum):
-    """Kind of source an event comes from; determines the required provenance."""
+    """Kind of evidence object; determines required provenance and canonical identity."""
 
     ONCHAIN_BLOCK = "onchain_block"
     ONCHAIN_TRANSACTION = "onchain_transaction"
+    ONCHAIN_RECEIPT = "onchain_receipt"
     ONCHAIN_LOG = "onchain_log"
+    ONCHAIN_TRACE = "onchain_trace"
     EXTERNAL_RECORD = "external_record"
 
 
@@ -40,6 +43,7 @@ class ValueState(str, Enum):
     """Epistemic state of a single observed field. Never collapsed into zero."""
 
     OBSERVED = "observed"
+    NULL = "null"
     UNKNOWN = "unknown"
     EMPTY_RESPONSE = "empty_response"
     NOT_INDEXED = "not_indexed"
@@ -70,6 +74,10 @@ class ObservedValue:
     @classmethod
     def observed(cls, value: Scalar) -> ObservedValue:
         return cls(ValueState.OBSERVED, value)
+
+    @classmethod
+    def null(cls) -> ObservedValue:
+        return cls(ValueState.NULL)
 
     @classmethod
     def unknown(cls) -> ObservedValue:
@@ -125,6 +133,17 @@ def _check_optional_hash(name: str, value: object) -> None:
         raise LedgerContractError(f"{name} must be a lowercase 0x-prefixed 32-byte hex string")
 
 
+def _normalize_trace_address(raw: object) -> tuple[int, ...] | None:
+    """``None`` = not stated; ``()`` = the root call of a trace (a valid position)."""
+    if raw is None:
+        return None
+    if not isinstance(raw, (tuple, list)) or any(
+        isinstance(i, bool) or not isinstance(i, int) or i < 0 for i in raw
+    ):
+        raise LedgerContractError(f"trace_address must be a sequence of non-negative ints: {raw!r}")
+    return tuple(raw)
+
+
 def _iso(value: datetime | None) -> str | None:
     return None if value is None else value.isoformat(timespec="microseconds")
 
@@ -161,6 +180,9 @@ class LedgerEvent:
     log_index: int | None = None
     source_version: str | None = None
     fields: FieldsInput = ()
+    chain_id: int | None = None
+    trace_address: tuple[int, ...] | None = None
+    context: ObservationContext = ObservationContext()
 
     def __post_init__(self) -> None:
         _require_text("event_id", self.event_id)
@@ -173,6 +195,15 @@ class LedgerEvent:
         _check_optional_nonneg_int("log_index", self.log_index)
         _check_optional_hash("block_hash", self.block_hash)
         _check_optional_hash("tx_hash", self.tx_hash)
+        if self.chain_id is not None and (
+            isinstance(self.chain_id, bool)
+            or not isinstance(self.chain_id, int)
+            or self.chain_id < 1
+        ):
+            raise LedgerContractError("chain_id must be a positive integer or None")
+        object.__setattr__(self, "trace_address", _normalize_trace_address(self.trace_address))
+        if not isinstance(self.context, ObservationContext):
+            raise LedgerContractError("context must be an ObservationContext")
         object.__setattr__(self, "fields", self._normalize_fields(self.fields))
 
     @staticmethod
@@ -206,13 +237,32 @@ class LedgerEvent:
             "block_hash": self.block_hash,
             "tx_hash": self.tx_hash,
             "log_index": self.log_index,
+            "chain_id": self.chain_id,
+            "trace_address": None if self.trace_address is None else list(self.trace_address),
+            "context": self.context.to_dict(),
             "fields": {name: value.to_dict() for name, value in self._items()},
         }
 
-    def canonical_dict(
+    def payload_dict(self, block_time_utc: datetime | None) -> dict[str, Any]:
+        """Provider-independent content of the (object, entity) link, timestamps in UTC.
+
+        Block placement (number, time) is part of the payload of receipts, logs, traces
+        and blocks, but not of a transaction: a transaction's content does not depend on
+        which block included it, so placement divergence is detected separately.
+        """
+        payload: dict[str, Any] = {
+            "entity_id": self.entity_id,
+            "fields": {name: value.to_dict() for name, value in self._items()},
+        }
+        if self.source_type is not SourceType.ONCHAIN_TRANSACTION:
+            payload["block_number"] = self.block_number
+            payload["block_time"] = _iso(block_time_utc)
+        return payload
+
+    def observation_dict(
         self, block_time_utc: datetime | None, received_at_utc: datetime | None
     ) -> dict[str, Any]:
-        """Content identity of an *admitted* event, with timestamps normalized to UTC."""
+        """Full identity of an *admitted* observation, with timestamps normalized to UTC."""
         return {
             **self._base_dict(),
             "block_time": _iso(block_time_utc),

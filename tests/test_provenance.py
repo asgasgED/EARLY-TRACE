@@ -49,7 +49,6 @@ def test_admitted_events_carry_required_provenance(source_type):
 @pytest.mark.parametrize(
     ("source_type", "omitted"),
     [
-        (SourceType.ONCHAIN_LOG, "log_index"),
         (SourceType.ONCHAIN_LOG, "tx_hash"),
         (SourceType.ONCHAIN_LOG, "block_hash"),
         (SourceType.ONCHAIN_LOG, "block_number"),
@@ -92,8 +91,8 @@ def test_identifiers_are_preserved_through_the_snapshot():
         event.tx_hash,
         5,
     )
-    assert record.content_hash == sha256_hex(
-        event.canonical_dict(record.block_time_utc, record.received_at_utc)
+    assert record.observation_hash == sha256_hex(
+        event.observation_dict(record.block_time_utc, record.received_at_utc)
     )
 
 
@@ -110,16 +109,23 @@ def test_adversarial_fixture_exclusion_reasons():
     snapshot = make_asof_snapshot(CUTOFF, ledger)
     assert snapshot.exclusion_counts() == {
         "duplicate_record": 1,
-        "incomplete_provenance": 2,
+        "incomplete_provenance": 1,
         "invalid_block_time": 1,
         "invalid_received_at": 2,
         "naive_block_time": 1,
         "naive_received_at": 2,
         "received_after_cutoff": 1,
         "received_at_missing": 1,
-        "received_before_block_time": 1,
     }
-    assert set(snapshot.event_ids) == {"adv-ok", "adv-dup", "adv-conflict"}
+    # received-before-block is admitted (anomaly), a log without log_index is admitted with
+    # an unresolved identity: neither is a provenance failure any more.
+    assert set(snapshot.event_ids) == {
+        "adv-ok",
+        "adv-dup",
+        "adv-conflict",
+        "adv-received-before-block",
+        "adv-missing-log-index",
+    }
 
 
 def test_exact_duplicate_is_counted_once_but_stays_traceable():

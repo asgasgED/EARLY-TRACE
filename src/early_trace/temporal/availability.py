@@ -14,16 +14,21 @@ Contract
   convert them explicitly.
 * A missing ``received_at`` is ``UNKNOWN`` availability and is never treated as
   available.
-* ``received_at < block_time`` is inconsistent and therefore ``INVALID``.
+* ``received_at < block_time`` is *not* a universal rejection rule (ET24 keeps
+  ``t_block`` and ``t_ingest`` as independent clocks). For on-chain evidence it is
+  recorded as a ``TemporalAnomaly`` and the event stays admissible. Only an explicit,
+  source-specific ``SourceClockRule`` (a declared clock tolerance) can turn it into an
+  exclusion, because only then is the record provably impossible. External records have
+  no block clock to compare, so no check applies to them.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 
-from early_trace.evidence.events import LedgerEvent
+from early_trace.evidence.events import LedgerEvent, SourceType
 
 
 class TimestampError(ValueError):
@@ -63,6 +68,63 @@ class ExclusionReason(str, Enum):
     DUPLICATE_RECORD = "duplicate_record"
 
 
+class AnomalyKind(str, Enum):
+    RECEIVED_BEFORE_BLOCK_TIME = "received_before_block_time"
+
+
+class AnomalyStatus(str, Enum):
+    """``PENDING_RESOLUTION`` is unexplained; a verified error is an exclusion instead."""
+
+    PENDING_RESOLUTION = "pending_resolution"
+    WITHIN_DECLARED_TOLERANCE = "within_declared_tolerance"
+
+
+@dataclass(frozen=True, slots=True)
+class TemporalAnomaly:
+    """A temporal inconsistency that is recorded without discarding the event."""
+
+    kind: AnomalyKind
+    status: AnomalyStatus
+    early_by_seconds: float
+    policy: str
+
+
+@dataclass(frozen=True, slots=True)
+class SourceClockRule:
+    """Declared clock tolerance of one source: how early a receipt may precede ``block_time``."""
+
+    source: str
+    max_early_receipt: timedelta
+
+    def __post_init__(self) -> None:
+        if not self.source.strip() or self.max_early_receipt < timedelta(0):
+            raise ValueError("a clock rule needs a source and a non-negative tolerance")
+
+
+@dataclass(frozen=True, slots=True)
+class TemporalPolicy:
+    """Explicit temporal rules. The empty policy rejects nothing for clock anomalies."""
+
+    source_clock_rules: tuple[SourceClockRule, ...] = ()
+
+    def rule_for(self, source: str) -> SourceClockRule | None:
+        for rule in self.source_clock_rules:
+            if rule.source == source:
+                return rule
+        return None
+
+
+_ONCHAIN_KINDS = frozenset(
+    {
+        SourceType.ONCHAIN_BLOCK,
+        SourceType.ONCHAIN_TRANSACTION,
+        SourceType.ONCHAIN_RECEIPT,
+        SourceType.ONCHAIN_LOG,
+        SourceType.ONCHAIN_TRACE,
+    }
+)
+
+
 @dataclass(frozen=True, slots=True)
 class AvailabilityResult:
     status: AvailabilityStatus
@@ -70,6 +132,7 @@ class AvailabilityResult:
     block_time_utc: datetime | None
     received_at_utc: datetime | None
     detail: str = ""
+    anomalies: tuple[TemporalAnomaly, ...] = ()
 
     @property
     def is_available(self) -> bool:
@@ -120,7 +183,9 @@ def _parse_field(
     return AvailabilityResult(AvailabilityStatus.INVALID, reason, None, None, detail)
 
 
-def check_availability(event: LedgerEvent, cutoff: object) -> AvailabilityResult:
+def check_availability(
+    event: LedgerEvent, cutoff: object, policy: TemporalPolicy | None = None
+) -> AvailabilityResult:
     """Decide whether ``event`` could be known at ``cutoff``.
 
     Raises ``InvalidCutoffError`` if the cutoff itself is unusable; every
@@ -158,13 +223,34 @@ def check_availability(event: LedgerEvent, cutoff: object) -> AvailabilityResult
             return parsed
         block_time = parsed
 
-    if block_time is not None and received < block_time:
-        return AvailabilityResult(
-            AvailabilityStatus.INVALID,
-            ExclusionReason.RECEIVED_BEFORE_BLOCK_TIME,
-            block_time,
-            received,
-            f"received_at {received.isoformat()} precedes block_time {block_time.isoformat()}",
+    anomalies: tuple[TemporalAnomaly, ...] = ()
+    if block_time is not None and received < block_time and event.source_type in _ONCHAIN_KINDS:
+        early_by = block_time - received
+        rule = (policy or TemporalPolicy()).rule_for(event.source)
+        if rule is not None and early_by > rule.max_early_receipt:
+            return AvailabilityResult(
+                AvailabilityStatus.INVALID,
+                ExclusionReason.RECEIVED_BEFORE_BLOCK_TIME,
+                block_time,
+                received,
+                f"received_at precedes block_time by {early_by.total_seconds()}s, beyond the "
+                f"declared tolerance of {rule.max_early_receipt.total_seconds()}s for "
+                f"source '{rule.source}'",
+            )
+        status = (
+            AnomalyStatus.PENDING_RESOLUTION
+            if rule is None
+            else AnomalyStatus.WITHIN_DECLARED_TOLERANCE
+        )
+        anomalies = (
+            TemporalAnomaly(
+                AnomalyKind.RECEIVED_BEFORE_BLOCK_TIME,
+                status,
+                early_by.total_seconds(),
+                "admitted and flagged: no source clock rule proves the record impossible"
+                if rule is None
+                else "admitted and flagged: within the declared clock tolerance",
+            ),
         )
 
     if received > cutoff_utc:
@@ -174,6 +260,9 @@ def check_availability(event: LedgerEvent, cutoff: object) -> AvailabilityResult
             block_time,
             received,
             f"received_at {received.isoformat()} is after cutoff {cutoff_utc.isoformat()}",
+            anomalies,
         )
 
-    return AvailabilityResult(AvailabilityStatus.AVAILABLE, None, block_time, received)
+    return AvailabilityResult(
+        AvailabilityStatus.AVAILABLE, None, block_time, received, "", anomalies
+    )

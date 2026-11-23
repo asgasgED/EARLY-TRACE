@@ -17,9 +17,44 @@ from pathlib import Path
 from typing import Any
 
 from early_trace.evidence.events import LedgerContractError, LedgerEvent, ObservedValue, SourceType
+from early_trace.evidence.observation import FinalityStatus, ObservationContext
 
 _REQUIRED_KEYS = {"event_id", "entity_id", "source_type", "source", "block_time", "received_at"}
-_OPTIONAL_KEYS = {"block_number", "block_hash", "tx_hash", "log_index", "source_version", "fields"}
+_OPTIONAL_KEYS = {
+    "block_number",
+    "block_hash",
+    "tx_hash",
+    "log_index",
+    "source_version",
+    "fields",
+    "chain_id",
+    "trace_address",
+    "context",
+}
+_CONTEXT_KEYS = {
+    "method",
+    "query_id",
+    "response_hash",
+    "parser_version",
+    "decoder_version",
+    "provider_state",
+    "interpretation_version",
+    "infrastructure_group",
+    "finality",
+}
+
+
+def context_from_record(raw: Mapping[str, Any]) -> ObservationContext:
+    """Build an ``ObservationContext``; unknown keys and unknown finality values are rejected."""
+    if not isinstance(raw, Mapping) or set(raw) - _CONTEXT_KEYS:
+        raise LedgerContractError(f"invalid context record: {raw!r}")
+    values = dict(raw)
+    if "finality" in values:
+        try:
+            values["finality"] = FinalityStatus(values["finality"])
+        except ValueError as exc:
+            raise LedgerContractError(f"unknown finality: {values['finality']!r}") from exc
+    return ObservationContext(**values)
 
 
 def event_from_record(record: Mapping[str, Any]) -> LedgerEvent:
@@ -56,6 +91,9 @@ def event_from_record(record: Mapping[str, Any]) -> LedgerEvent:
         log_index=record.get("log_index"),
         source_version=record.get("source_version"),
         fields=fields,
+        chain_id=record.get("chain_id"),
+        trace_address=record.get("trace_address"),
+        context=context_from_record(record.get("context", {})),
     )
 
 

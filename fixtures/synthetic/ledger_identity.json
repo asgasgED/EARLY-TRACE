@@ -1,0 +1,318 @@
+{
+  "fixture": {
+    "id": "ledger_identity",
+    "synthetic": true,
+    "reference_cutoff": "2026-03-01T10:30:00+00:00",
+    "notice": "SYNTHETIC FIXTURE: fabricated data for EARLY-TRACE G2 tests. Not real Ethereum data."
+  },
+  "events": [
+    {
+      "event_id": "s1-receipt-a",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_receipt",
+      "source": "prov-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:01:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0x074af2711b300cdee50cd806672c23d34e9661f41af80a64386c1de44382cec6",
+      "chain_id": 1,
+      "context": {
+        "method": "eth_getTransactionReceipt",
+        "query_id": "q-receipt-001"
+      },
+      "fields": {
+        "gas_used": {
+          "state": "observed",
+          "value": 21000
+        }
+      }
+    },
+    {
+      "event_id": "s1-receipt-b",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_receipt",
+      "source": "prov-b",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:02:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0x074af2711b300cdee50cd806672c23d34e9661f41af80a64386c1de44382cec6",
+      "chain_id": 1,
+      "context": {
+        "method": "eth_getBlockReceipts",
+        "query_id": "q-block-receipts-001"
+      },
+      "fields": {
+        "gas_used": {
+          "state": "observed",
+          "value": 21000
+        }
+      }
+    },
+    {
+      "event_id": "s2-log-via-receipt",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "prov-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:03:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0x444dedb1a92b920c9fc44b490b98f635fb9f2978e0c34967d285682764b11a97",
+      "chain_id": 1,
+      "log_index": 0,
+      "context": {
+        "method": "eth_getTransactionReceipt"
+      },
+      "fields": {
+        "transfer_value": {
+          "state": "observed",
+          "value": 5
+        }
+      }
+    },
+    {
+      "event_id": "s2-log-via-getlogs",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "prov-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:04:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0x444dedb1a92b920c9fc44b490b98f635fb9f2978e0c34967d285682764b11a97",
+      "chain_id": 1,
+      "log_index": 0,
+      "context": {
+        "method": "eth_getLogs"
+      },
+      "fields": {
+        "transfer_value": {
+          "state": "observed",
+          "value": 5
+        }
+      }
+    },
+    {
+      "event_id": "s3-log-g1",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "prov-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:05:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0xb7987135a47c715ff51ff599116b84b74717137e3060ee3575ac483d3b11899a",
+      "chain_id": 1,
+      "log_index": 0,
+      "context": {
+        "infrastructure_group": "audit-001:group-1"
+      },
+      "fields": {
+        "transfer_value": {
+          "state": "observed",
+          "value": 7
+        }
+      }
+    },
+    {
+      "event_id": "s3-log-g2",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "prov-c",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:06:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0xb7987135a47c715ff51ff599116b84b74717137e3060ee3575ac483d3b11899a",
+      "chain_id": 1,
+      "log_index": 0,
+      "context": {
+        "infrastructure_group": "audit-001:group-2"
+      },
+      "fields": {
+        "transfer_value": {
+          "state": "observed",
+          "value": 7
+        }
+      }
+    },
+    {
+      "event_id": "s4-log-d1",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "prov-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:07:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0xbf8dcf12683764c0ed0bb4303a3e23f959bfc6ce691ac272d7671484db167d3d",
+      "chain_id": 1,
+      "log_index": 0,
+      "context": {
+        "decoder_version": "dec-1.0"
+      },
+      "fields": {
+        "transfer_value": {
+          "state": "observed",
+          "value": 9
+        }
+      }
+    },
+    {
+      "event_id": "s4-log-d2",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "prov-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:08:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0xbf8dcf12683764c0ed0bb4303a3e23f959bfc6ce691ac272d7671484db167d3d",
+      "chain_id": 1,
+      "log_index": 0,
+      "context": {
+        "decoder_version": "dec-2.0"
+      },
+      "fields": {
+        "transfer_value": {
+          "state": "observed",
+          "value": 9
+        }
+      }
+    },
+    {
+      "event_id": "s5-log-early",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "prov-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:09:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0x9ee35a1c1bb4e38242807d021a4242ff53b8e710f9f1b5e5bea083ea353b4444",
+      "chain_id": 1,
+      "log_index": 0,
+      "fields": {
+        "transfer_value": {
+          "state": "observed",
+          "value": 3
+        }
+      }
+    },
+    {
+      "event_id": "s5-log-late",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "prov-b",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:20:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0x9ee35a1c1bb4e38242807d021a4242ff53b8e710f9f1b5e5bea083ea353b4444",
+      "chain_id": 1,
+      "log_index": 0,
+      "fields": {
+        "transfer_value": {
+          "state": "observed",
+          "value": 3
+        }
+      }
+    },
+    {
+      "event_id": "s6-log-0",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:10:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0x2d2c17ebfa70b692c2ad1cd5f73ffac4301f9b4be2933070204380dc00e5ab93",
+      "chain_id": 1,
+      "log_index": 0,
+      "fields": {
+        "transfer_value": {
+          "state": "observed",
+          "value": 1
+        }
+      }
+    },
+    {
+      "event_id": "s6-log-1",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_log",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:10:00+00:00",
+      "block_number": 100,
+      "block_hash": "0xaa9ed5d160ab73fec726a749516d24a1021d7ffa52d9332e5d32ff2ab7c12ff8",
+      "tx_hash": "0x2d2c17ebfa70b692c2ad1cd5f73ffac4301f9b4be2933070204380dc00e5ab93",
+      "chain_id": 1,
+      "log_index": 1,
+      "fields": {
+        "transfer_value": {
+          "state": "observed",
+          "value": 2
+        }
+      }
+    },
+    {
+      "event_id": "s7-receipt-x",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_receipt",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:11:00+00:00",
+      "block_number": 200,
+      "block_hash": "0x642ddef34542fa1891360fc86a7b83db6d575673b761d57a7ebca891f8cff705",
+      "tx_hash": "0xe79d3bd1c010727750f3cab78162c94c6feec73e5a46f96b1bda3d42fdebc433",
+      "chain_id": 1,
+      "context": {
+        "finality": "reorged"
+      },
+      "fields": {
+        "gas_used": {
+          "state": "observed",
+          "value": 30000
+        }
+      }
+    },
+    {
+      "event_id": "s7-receipt-y",
+      "entity_id": "synthetic-entity-1",
+      "source_type": "onchain_receipt",
+      "source": "synthetic-provider-a",
+      "source_version": "v1",
+      "block_time": "2026-03-01T10:00:00+00:00",
+      "received_at": "2026-03-01T10:12:00+00:00",
+      "block_number": 201,
+      "block_hash": "0x8b362c0b3b2a72265f92ccbc5078f103180d9943aba5c86c43dc54cbe1b61319",
+      "tx_hash": "0xe79d3bd1c010727750f3cab78162c94c6feec73e5a46f96b1bda3d42fdebc433",
+      "chain_id": 1,
+      "context": {
+        "finality": "finalized"
+      },
+      "fields": {
+        "gas_used": {
+          "state": "observed",
+          "value": 30000
+        }
+      }
+    }
+  ]
+}

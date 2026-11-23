@@ -1,4 +1,10 @@
-"""Provenance requirements per source type and verifiable provenance records."""
+"""Provenance requirements per source type and verifiable provenance records.
+
+Provenance describes the *observation* (where the evidence came from and when). Identity
+fields that only matter for canonical deduplication (``chain_id``, ``log_index``,
+``trace_address``) are not provenance requirements: their absence leaves the object's
+identity unresolved (see ``identity.py``) instead of excluding the observation.
+"""
 
 from __future__ import annotations
 
@@ -9,6 +15,8 @@ from types import MappingProxyType
 from typing import Any
 
 from early_trace.evidence.events import LedgerEvent, SourceType
+from early_trace.evidence.identity import Identity, ObjectKey, UnresolvedIdentity
+from early_trace.evidence.observation import ObservationContext
 
 _BLOCK_FIELDS = ("block_number", "block_hash", "block_time")
 
@@ -18,7 +26,9 @@ REQUIRED_PROVENANCE: Mapping[SourceType, tuple[str, ...]] = MappingProxyType(
     {
         SourceType.ONCHAIN_BLOCK: _BLOCK_FIELDS,
         SourceType.ONCHAIN_TRANSACTION: (*_BLOCK_FIELDS, "tx_hash"),
-        SourceType.ONCHAIN_LOG: (*_BLOCK_FIELDS, "tx_hash", "log_index"),
+        SourceType.ONCHAIN_RECEIPT: (*_BLOCK_FIELDS, "tx_hash"),
+        SourceType.ONCHAIN_LOG: (*_BLOCK_FIELDS, "tx_hash"),
+        SourceType.ONCHAIN_TRACE: (*_BLOCK_FIELDS, "tx_hash"),
         SourceType.EXTERNAL_RECORD: (),
     }
 )
@@ -46,7 +56,13 @@ class ProvenanceRecord:
     log_index: int | None
     block_time_utc: datetime | None
     received_at_utc: datetime
-    content_hash: str
+    chain_id: int | None
+    trace_address: tuple[int, ...] | None
+    context: ObservationContext
+    object_key_id: str | None
+    identity_issue: str | None
+    payload_hash: str
+    observation_hash: str
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -63,7 +79,13 @@ class ProvenanceRecord:
             if self.block_time_utc is None
             else self.block_time_utc.isoformat(timespec="microseconds"),
             "received_at": self.received_at_utc.isoformat(timespec="microseconds"),
-            "content_hash": self.content_hash,
+            "chain_id": self.chain_id,
+            "trace_address": None if self.trace_address is None else list(self.trace_address),
+            "context": self.context.to_dict(),
+            "object_key_id": self.object_key_id,
+            "identity_issue": self.identity_issue,
+            "payload_hash": self.payload_hash,
+            "observation_hash": self.observation_hash,
         }
 
 
@@ -71,7 +93,10 @@ def build_provenance(
     event: LedgerEvent,
     block_time_utc: datetime | None,
     received_at_utc: datetime,
-    content_hash: str,
+    *,
+    identity: Identity,
+    payload_hash: str,
+    observation_hash: str,
 ) -> ProvenanceRecord:
     return ProvenanceRecord(
         event_id=event.event_id,
@@ -85,5 +110,11 @@ def build_provenance(
         log_index=event.log_index,
         block_time_utc=block_time_utc,
         received_at_utc=received_at_utc,
-        content_hash=content_hash,
+        chain_id=event.chain_id,
+        trace_address=event.trace_address,
+        context=event.context,
+        object_key_id=identity.key_id if isinstance(identity, ObjectKey) else None,
+        identity_issue=identity.detail if isinstance(identity, UnresolvedIdentity) else None,
+        payload_hash=payload_hash,
+        observation_hash=observation_hash,
     )

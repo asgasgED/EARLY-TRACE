@@ -16,18 +16,24 @@ CUTOFF = "2026-03-01T10:05:00+00:00"
 BASIC = Path(__file__).resolve().parents[1] / "fixtures" / "synthetic" / "ledger_basic.json"
 STATES = {
     "zero_observed": ObservedValue.observed(0),
+    "null_field": ObservedValue.null(),
     "unknown_value": ObservedValue.unknown(),
     "empty_reply": ObservedValue.empty_response(),
     "unindexed": ObservedValue.not_indexed(),
 }
 
 
-def test_four_states_are_pairwise_distinct():
+def test_five_states_are_pairwise_distinct():
     values = list(STATES.values())
-    assert len({v.state for v in values}) == 4
-    assert len({sha256_hex(v.to_dict()) for v in values}) == 4
+    assert len({v.state for v in values}) == 5
+    assert len({sha256_hex(v.to_dict()) for v in values}) == 5
     assert ObservedValue.observed(0).value == 0
-    for state in (ValueState.UNKNOWN, ValueState.EMPTY_RESPONSE, ValueState.NOT_INDEXED):
+    for state in (
+        ValueState.NULL,
+        ValueState.UNKNOWN,
+        ValueState.EMPTY_RESPONSE,
+        ValueState.NOT_INDEXED,
+    ):
         assert ObservedValue(state).value is None
 
 
@@ -57,15 +63,16 @@ def test_events_differing_only_in_absence_state_have_different_content_hashes():
         )
 
     hashes = {make_asof_snapshot(CUTOFF, [build(v)]).snapshot_hash for v in STATES.values()}
-    assert len(hashes) == 4
+    assert len(hashes) == 5
 
 
-def test_fixture_with_all_four_states_is_preserved():
+def test_fixture_with_all_states_is_preserved():
     ledger = load_ledger_json(BASIC, require_synthetic=True)
     snapshot = make_asof_snapshot(CUTOFF, ledger)
     states = next(i.event for i in snapshot.events if i.event.event_id == "evt-005-states")
     assert {name: v.state for name, v in states.fields} == {
         "empty_reply": ValueState.EMPTY_RESPONSE,
+        "null_field": ValueState.NULL,
         "unindexed": ValueState.NOT_INDEXED,
         "unknown_value": ValueState.UNKNOWN,
         "zero_observed": ValueState.OBSERVED,
@@ -79,6 +86,7 @@ def test_fixture_with_all_four_states_is_preserved():
         lambda: ObservedValue(ValueState.UNKNOWN, 0),
         lambda: ObservedValue(ValueState.EMPTY_RESPONSE, ""),
         lambda: ObservedValue(ValueState.NOT_INDEXED, -1),
+        lambda: ObservedValue(ValueState.NULL, 0),
         lambda: ObservedValue.observed(float("nan")),
         lambda: ObservedValue.observed(float("inf")),
         lambda: ObservedValue("observed", 1),  # type: ignore[arg-type]
